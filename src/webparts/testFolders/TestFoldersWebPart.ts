@@ -272,11 +272,13 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
 
     let folderName: string = "";
     let subFolderName1 : string = "";
-    //let subFolderName2 : string = "";
-    //let subFolderName3 : string = "";
+    let subFolderName2 : string = "";
+    let subFolderName3 : string = "";
     
     let folderPrev: string = "";
     let subFolderPrev1 : string = "";
+    let subFolderPrev2 : string = "";
+    let subFolderPrev3 : string = "";
 
     // *** arrays of folder id's for the Folder EventListeners
     this.properties.folderArray = [];
@@ -328,7 +330,7 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
 
             if(folderName !== folderPrev){
               //this.properties.folderArray.push(folderName);
-              folderHTML+=`<button type="button" data-bs-toggle="button" aria-pressed="true" class="mb-1 btn btn-primary"><h6>${folderName}</h6></button>`;
+              folderHTML+=`<button type="button" data-bs-toggle="button" aria-pressed="true" class="mb-1 btn btn-primary text-left"><h6>${folderName}</h6></button>`;
               folderPrev=folderName;
             }
 
@@ -340,6 +342,26 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
                 console.log(subFolderName1);
                 subFolderPrev1 = subFolderName1;
               }
+
+              if(this.properties.dataResults[x].FieldValuesAsText.DC_x005f_SubFolder02 !== ""){
+                subFolderName2 = this.properties.dataResults[x].DC_SubFolder02.Label;
+                
+                if(subFolderName2 !== subFolderPrev2){
+                  folderHTML+=`<button type="button" data-bs-toggle="button" aria-pressed="true" class="ms-3 btn btn-info"><h6>${subFolderName2}</h6></button>`;
+                  console.log(subFolderName2);
+                  subFolderPrev2 = subFolderName2;
+                }
+
+                if(this.properties.dataResults[x].FieldValuesAsText.DC_x005f_SubFolder03 !== ""){
+                  subFolderName3 = this.properties.dataResults[x].DC_SubFolder03.Label;
+                  
+                  if(subFolderName3 !== subFolderPrev3){
+                    folderHTML+=`<button type="button" data-bs-toggle="button" aria-pressed="true" class="ms-4 btn btn-danger"><h6>${subFolderName3}</h6></button>`;
+                    console.log(subFolderName3);
+                    subFolderPrev3 = subFolderName3;
+                  }
+                }                 
+              } 
             }            
           }
         }
