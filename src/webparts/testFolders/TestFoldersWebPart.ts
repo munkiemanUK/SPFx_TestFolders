@@ -270,9 +270,9 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
 
     let htmlString : string = "";
     let folderHTML: string = "";
-    let subfolder1HTML : string = "";
-    let subfolder2HTML : string = "";
-    let subfolder3HTML : string = "";    
+    //let subfolder1HTML : string = "";
+    //let subfolder2HTML : string = "";
+    //let subfolder3HTML : string = "";    
     //let folderHTMLEnd : string = "";
 
     //let subFolder1Flag : boolean;
@@ -336,7 +336,7 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
       //  this.domElement.querySelector("#policiesFolders")!.innerHTML = "<h2>folder name</h2>";
       //}
       
-      htmlString=`<div class="d-grid gap-2 mx-auto">`;
+      folderHTML=`<div class="d-grid gap-2 mx-auto">`;
 
       for(let x=0;x<this.properties.dataResults.length;x++){
         
@@ -364,16 +364,16 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
 
               if(subFolderName1!==""){
                 //folderHTML+=`<button type="button" data-bs-toggle="button" aria-pressed="true" class="accordion-button mb-1 btn btn-primary text-left"><h6>${folderName}</h6></button>`;
-                folderHTML+=`<button class="btn btn-primary mb-1 accordion-button" type="button" data-bs-toggle="button" aria-pressed="true" data-bs-target="#collapseSF1-${x}" aria-expanded="true" aria-controls="collapseSF1-${x}">
+                folderHTML+=`<button class="btn btn-primary mb-1 ${styles.folderBtn}" type="button" data-bs-toggle="button" aria-pressed="true" data-bs-target="#collapseSF1-${x}" aria-expanded="true" aria-controls="collapseSF1-${x}">
                                 <i class="bi bi-folder2"></i>
-                                <a href="#" class="text-white ms-2" id="${folderNameID}">${folderName}</a>
                                 <span class="badge ms-bgColor-themePrimary">${fcount}</span>                    
+                                <a href="#" class="text-white ms-1" id="${folderNameID}">${folderName}</a>
                               </button>`;
               }else{
-                folderHTML+=`<button class="btn btn-success mb-1" type="button" data-bs-toggle="button" aria-pressed="true">
+                folderHTML+=`<button class="btn btn-success mb-1 ${styles.folderBtn}" type="button" data-bs-toggle="button" aria-pressed="true">
                               <i class="bi bi-folder2"></i>
-                              <a href="#" class="text-white ms-1" id="${folderNameID}">${folderName}</a>
                               <span class="badge ms-bgColor-themePrimary">${fcount}</span>                
+                              <a href="#" class="text-white ms-1" id="${folderNameID}">${folderName}</a>
                             </button>`;
               }
              
@@ -387,9 +387,17 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
               if(subFolderName1 !== subFolderPrev1){
                 
                 if(subFolderName2 !== ""){
-                  subfolder1HTML+=`<button type="button" data-bs-toggle="button" aria-pressed="true" class="accordion-button ms-2 btn btn-secondary"><h6>${subFolderName1}</h6></button>`;        
+                  folderHTML+=`<button type="button" data-bs-toggle="button" aria-pressed="true" class="ms-2 btn btn-secondary ${styles.folderBtn}">
+                                <i class="bi bi-folder2"></i>
+                                <span class="badge ms-bgColor-themePrimary">${fcount}</span>                    
+                                <a href="#" class="text-white ms-1" id="${folderNameID}">${subFolderName1}</a>
+                              </button>`;        
                 }else{
-                  subfolder1HTML+=`<button type="button" data-bs-toggle="button" aria-pressed="true" class="ms-2 btn btn-dark"><h6>${subFolderName1}</h6></button>`;
+                  folderHTML+=`<button type="button" data-bs-toggle="button" aria-pressed="true" class="ms-2 btn btn-dark ${styles.folderBtn}">
+                                <i class="bi bi-folder2"></i>
+                                <span class="badge ms-bgColor-themePrimary">${fcount}</span>                    
+                                <a href="#" class="text-white ms-1" id="${folderNameID}">${subFolderName1}</a>
+                              </button>`;
                 }  
 
                 console.log("subFolderName1",subFolderName1);
@@ -403,9 +411,17 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
                 if(subFolderName2 !== subFolderPrev2){
 
                   if(subFolderName3 !== ""){
-                    subfolder2HTML+=`<button type="button" data-bs-toggle="button" aria-pressed="true" class="accordion-button ms-3 btn btn-info"><h6>${subFolderName2}</h6></button>`;          
+                    folderHTML+=`<button type="button" data-bs-toggle="button" aria-pressed="true" class="ms-3 btn btn-info ${styles.folderBtn}">
+                                  <i class="bi bi-folder2"></i>
+                                  <span class="badge ms-bgColor-themePrimary">${fcount}</span>                    
+                                  <a href="#" class="text-white ms-1" id="${folderNameID}">${subFolderName2}</a>
+                                </button>`;          
                   }else{
-                    subfolder2HTML+=`<button type="button" data-bs-toggle="button" aria-pressed="true" class="ms-3 btn btn-warning"><h6>${subFolderName2}</h6></button>`;
+                    folderHTML+=`<button type="button" data-bs-toggle="button" aria-pressed="true" class="ms-3 btn btn-warning ${styles.folderBtn}">
+                                  <i class="bi bi-folder2"></i>
+                                  <span class="badge ms-bgColor-themePrimary">${fcount}</span>                    
+                                  <a href="#" class="text-white ms-1" id="${folderNameID}">${subFolderName2}</a>        
+                                  </button>`;
                   }
                   
                   console.log("subFolderName2",subFolderName2);
@@ -417,7 +433,11 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
                   subFolderName3 = this.properties.dataResults[x].DC_SubFolder03.Label;
                   
                   if(subFolderName3 !== subFolderPrev3){                    
-                    subfolder3HTML+=`<button type="button" data-bs-toggle="button" aria-pressed="true" class="ms-4 btn btn-danger"><h6>${subFolderName3}</h6></button>`;
+                    folderHTML+=`<button type="button" data-bs-toggle="button" aria-pressed="true" class="ms-4 btn btn-danger ${styles.folderBtn}">
+                                  <i class="bi bi-folder2"></i>
+                                  <span class="badge ms-bgColor-themePrimary">${fcount}</span>                    
+                                  <a href="#" class="text-white ms-1" id="${folderNameID}">${subFolderName3}</a>        
+                                  </button>`;
                     console.log("subFolderName3",subFolderName3);
                     subFolderPrev3 = subFolderName3;
                   }
@@ -426,6 +446,9 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
             }            
           }
         }
+      }  // *** end of for loop
+
+/*
 
         htmlString+=`<div class="accordion" id="accordionPF-${x}">
                     <div class="accordion-item">
@@ -461,8 +484,6 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
                       </div>
                     </div>
                   </div>`;                    
-
-/*
 
 <div class="accordion" id="accordionExample">
   <div class="accordion-item">
@@ -521,11 +542,9 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
                   </div>    
 */              
 
-      }  // *** end of for loop
+      folderHTML+=`</div>`;
 
-      htmlString+=`</div>`;
-
-      console.log(htmlString);
+      console.log(folderHTML);
 
       switch (libraryName) {
         case "Policies":
@@ -535,7 +554,7 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
           if(procedureContainer){procedureContainer.innerHTML=htmlString;}
           break;
         case "Guides":
-          if(guidesContainer){guidesContainer.innerHTML=htmlString;}
+          if(guidesContainer){guidesContainer.innerHTML=folderHTML;}
           break;
         case "Forms":
           if(formsContainer){formsContainer.innerHTML=htmlString;}
