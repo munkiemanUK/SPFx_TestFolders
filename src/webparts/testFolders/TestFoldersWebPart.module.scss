@@ -19,6 +19,10 @@
   max-width: 420px;
 }
 
+.folderBtn {
+  text-align: left!important;
+}
+
 .links {
   a {
     text-decoration: none;
@@ -31,8 +35,4 @@
       color: var(--linkHovered); // note: CSS Custom Properties support is limited to modern browsers only
     }
   }
-}
-
-.folderBtn {
-  text-align: left!important;
 }
