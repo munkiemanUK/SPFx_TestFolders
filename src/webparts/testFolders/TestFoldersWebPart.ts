@@ -15,16 +15,25 @@ import {
   SPHttpClient,
   SPHttpClientResponse,
 } from "@microsoft/sp-http";
-import { spfi, SPFx } from "@pnp/sp";
-import { Web } from "@pnp/sp/webs"; 
+//import { spfi, SPFx } from "@pnp/sp";
+//import { Web } from "@pnp/sp/webs"; 
 import "@pnp/sp/webs";
 import "@pnp/sp/lists";
 import "@pnp/sp/items";
 import "@pnp/sp/items/get-all";
-import { LogLevel, PnPLogging } from "@pnp/logging";
+//import { LogLevel, PnPLogging } from "@pnp/logging";
 //import * as _ from 'lodash';
 
 require("bootstrap");
+
+export interface ISPLists {
+  value: ISPList[];
+}
+
+export interface ISPList {
+  Id : string;
+  Title : string;
+}
 
 export interface ITestFoldersWebPartProps {
   description: string;
@@ -48,7 +57,7 @@ export interface ITestFoldersWebPartProps {
   subFolder2Array: any[];
   subFolder3Array: any[];
   isPowerUser: boolean;
-  //dataFlag : boolean;
+  dataFlag : boolean;
 }
 
 export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFoldersWebPartProps> {
@@ -199,13 +208,14 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
       //}
 
       for (let x = 0; x < library.length; x++) {
+        this.properties.dataFlag = false;
         //console.log("library URL=" + this.properties.dcURL + "/" + library[x]);
-        const dataFlag = await this.checkData(library[x],this.properties.siteName,"");
+        this.checkDataAsync(library[x],this.properties.siteName);
         const dataTarget:string=library[x].toLowerCase();
         
-        console.log("dataFlag="+dataFlag);
+        console.log("dataFlag="+this.properties.dataFlag,"library",library[x]);
 
-        if(dataFlag){
+        if(this.properties.dataFlag){
           if (this.properties.isPowerUser) {
 
           html += `<button class="btn libraryBtn nav-link text-left mb-1" id="${library[x]}_btn" data-bs-toggle="pill" data-bs-target="#${dataTarget}" type="button" role="tab" aria-controls="${library[x]}" aria-selected="true">
@@ -228,24 +238,22 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
 
       // *** get custom tabs from termstore and add library column
       //await this.renderCustomTabsAsync();
-      await this.setLibraryListeners();
+      //await this.setLibraryListeners();
     } catch (err) {
       //await this.addError(this.properties.siteName,"getLibraryTabs",err.message);
     }
     return;
   }
 
-  private async checkData(library:string,team:string,category:string):Promise<boolean> {
-    //this.context.pageContext.web.absoluteUrl +      
-    
-    const divisions : string[] = ["Assessments","Central","Connect","Employability","Health"];
-    let dataFlag : boolean = false;
-    
-    for(let x=0;x<divisions.length;x++){
-      let division : string = divisions[x];      
+  private async checkDataAsync(library:string,team:string):Promise<void> {
+
+    //const divisions : string[] = ["Assessments","Central","Connect","Employability","Health"];
+
+    //for(let x=0;x<divisions.length;x++){
+      //let division : string = divisions[x];      
       let dcName : string = "";      
 
-      switch(division){
+      switch(this.properties.divisionTitle){
         case "Assessments":
           dcName = "asm_dc";
           break;
@@ -263,24 +271,77 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
           break;
       }
 
-      let requestUrl = `https://${this.properties.tenantURL[2]}/sites/${dcName}/_api/web/lists/GetByTitle('${library}')/items?$filter=TaxCatchAll/Term eq '${team}'&$top=10`;
+      console.log("division",this.properties.divisionTitle,"dc",dcName,"library",library);
+    
+      this.checkData(dcName,library,team)
+        .then((response) => {
+          console.log("dcName",dcName,"responseValue",response.value.length);
+          if(response.value.length>0){
+            this.properties.dataFlag = true; 
+          }else{
+            this.properties.dataFlag = false;
+          }
+        })
+    return;
+  }
+
+  private checkData(dcName:string,library:string,team:string):Promise<ISPLists> {
+    const requestUrl = `https://${this.properties.tenantURL[2]}/sites/${dcName}/_api/web/lists/GetByTitle('${library}')/items?$filter=TaxCatchAll/Term eq '${team}'&$top=10`;
+
+    return this.context.spHttpClient.get(requestUrl, SPHttpClient.configurations.v1)
+      .then((response : SPHttpClientResponse) => {
+        return response.json();
+      });   
+  }
+
+/*
+  private async checkData(library:string,team:string):Promise<boolean> {
+    //this.context.pageContext.web.absoluteUrl +      
+    
+    //const divisions : string[] = ["Assessments","Central","Connect","Employability","Health"];
+    //let dataFlag : boolean = false;
+    
+    //for(let x=0;x<divisions.length;x++){
+    //  let division : string = divisions[x];      
+      let dcName : string = "";      
+
+      switch(this.properties.divisionTitle){
+        case "Assessments":
+          dcName = "asm_dc";
+          break;
+        case "Central":
+          dcName = "cen_dc";
+          break;
+        case "Connect":
+          dcName = "cnn_dc";
+          break;
+        case "Employability":
+          dcName = "emp_dc";
+          break;
+        case "Health":
+          dcName = "hea_dc";
+          break;
+      }
+
+      const requestUrl = `https://${this.properties.tenantURL[2]}/sites/${dcName}/_api/web/lists/GetByTitle('${library}')/items?$filter=TaxCatchAll/Term eq '${team}'&$top=10`;
       console.log(requestUrl);
 
       this.context.spHttpClient.get(requestUrl, SPHttpClient.configurations.v1)
         .then((response : SPHttpClientResponse) => {
-          if(response.ok){
+          //if(response.ok){
             response.json().then((responseJSON:any) => {
-              console.log(responseJSON);
-              if(responseJSON.value.length>0){
-                dataFlag=true; 
-              }else{
-                dataFlag=false;
-              }
+              console.log("responseJSON",responseJSON.value.length);
+              //if(responseJSON.value.length>0){
+              //  dataFlag=true; 
+              //}else{
+              //  dataFlag=false;
+              //}
             });
-          }
+          //}
         });
-    }
-    return dataFlag;   
+        
+    //}
+    return true;   
   }
 
   private async setLibraryListeners(): Promise<void> {
@@ -328,7 +389,6 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
     }  
     return;
   }  
-
 
   private getData(libraryName:string,tabNum:number,category:string): void {
     alert(libraryName);
@@ -719,6 +779,7 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
     }
     return counter;
   } 
+*/
 
   public async onInit(): Promise<void> {
     await super.onInit();
