@@ -25,6 +25,7 @@ import "@pnp/sp/items/get-all";
 //import * as _ from 'lodash';
 
 require("bootstrap");
+let dataFlag : boolean;
 
 export interface ISPLists {
   value: ISPList[];
@@ -57,7 +58,7 @@ export interface ITestFoldersWebPartProps {
   subFolder2Array: any[];
   subFolder3Array: any[];
   isPowerUser: boolean;
-  dataFlag : boolean;
+  //dataFlag : boolean;
 }
 
 export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFoldersWebPartProps> {
@@ -65,7 +66,7 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
   //private _isDarkTheme: boolean = false;
   //private _environmentMessage: string = '';
 
-  public render(): void {
+  public async render(): Promise<void> {
 
     this.properties.URL = this.context.pageContext.web.absoluteUrl;
     this.properties.tenantURL = this.properties.URL.split('/',5);
@@ -191,7 +192,7 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
     //document.getElementById('guides_btn')?.addEventListener("click",(_e:Event) => this._getData('Guides',3,""));
     //document.getElementById('forms_btn')?.addEventListener("click",(_e:Event) => this._getData('Forms',4,""));
     //document.getElementById('general_btn')?.addEventListener("click",(_e:Event) => this._getData('General',5,""));
-    this.getLibraryTabs();
+    await this.getLibraryTabs();
   }
 
   private async getLibraryTabs(): Promise<void> {
@@ -208,14 +209,14 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
       //}
 
       for (let x = 0; x < library.length; x++) {
-        this.properties.dataFlag = false;
-        //console.log("library URL=" + this.properties.dcURL + "/" + library[x]);
-        this.checkDataAsync(library[x],this.properties.siteName);
+        dataFlag = false;
+        
+        this.checkDataAsync(library[x],this.properties.siteName);        
         const dataTarget:string=library[x].toLowerCase();
         
-        console.log("dataFlag="+this.properties.dataFlag,"library",library[x]);
+        console.log("dataFlag="+dataFlag,"library",library[x]);
 
-        if(this.properties.dataFlag){
+        if(dataFlag){
           if (this.properties.isPowerUser) {
 
           html += `<button class="btn libraryBtn nav-link text-left mb-1" id="${library[x]}_btn" data-bs-toggle="pill" data-bs-target="#${dataTarget}" type="button" role="tab" aria-controls="${library[x]}" aria-selected="true">
@@ -246,46 +247,43 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
   }
 
   private async checkDataAsync(library:string,team:string):Promise<void> {
+     
+    let dcName : string = "";      
 
-    //const divisions : string[] = ["Assessments","Central","Connect","Employability","Health"];
-
-    //for(let x=0;x<divisions.length;x++){
-      //let division : string = divisions[x];      
-      let dcName : string = "";      
-
-      switch(this.properties.divisionTitle){
-        case "Assessments":
-          dcName = "asm_dc";
-          break;
-        case "Central":
-          dcName = "cen_dc";
-          break;
-        case "Connect":
-          dcName = "cnn_dc";
-          break;
-        case "Employability":
-          dcName = "emp_dc";
-          break;
-        case "Health":
-          dcName = "hea_dc";
-          break;
-      }
-
-      console.log("division",this.properties.divisionTitle,"dc",dcName,"library",library);
-    
-      this.checkData(dcName,library,team)
-        .then((response) => {
-          console.log("dcName",dcName,"responseValue",response.value.length);
-          if(response.value.length>0){
-            this.properties.dataFlag = true; 
-          }else{
-            this.properties.dataFlag = false;
-          }
-        })
-    return;
+    switch(this.properties.divisionTitle){
+      case "Assessments":
+        dcName = "asm_dc";
+        break;
+      case "Central":
+        dcName = "cen_dc";
+        break;
+      case "Connect":
+        dcName = "cnn_dc";
+        break;
+      case "Employability":
+        dcName = "emp_dc";
+        break;
+      case "Health":
+        dcName = "hea_dc";
+        break;
+    }
+  
+    await this.checkData(dcName,library,team)
+      .then((response) => {
+        //console.log("dcName",dcName,"responseValue",response.value.length);
+        console.log("dataFlag="+dataFlag);
+        console.log(library," count:",response.value.length);
+        //count=response.value.length;
+        if(response.value.length>0){
+          dataFlag = true; 
+        }else{
+          dataFlag = false;
+        }
+      });
+      return;
   }
 
-  private checkData(dcName:string,library:string,team:string):Promise<ISPLists> {
+  private async checkData(dcName:string,library:string,team:string):Promise<ISPLists> {
     const requestUrl = `https://${this.properties.tenantURL[2]}/sites/${dcName}/_api/web/lists/GetByTitle('${library}')/items?$filter=TaxCatchAll/Term eq '${team}'&$top=10`;
 
     return this.context.spHttpClient.get(requestUrl, SPHttpClient.configurations.v1)
