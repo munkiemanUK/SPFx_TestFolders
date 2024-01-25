@@ -25,7 +25,6 @@ import "@pnp/sp/items/get-all";
 //import * as _ from 'lodash';
 
 require("bootstrap");
-let dataFlag : boolean;
 
 export interface ISPLists {
   value: ISPList[];
@@ -195,11 +194,11 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
     await this.getLibraryTabs();
   }
 
+
   private async getLibraryTabs(): Promise<void> {
     const library = ["Policies", "Procedures", "Guides", "Forms", "General"];
     const listContainer: Element | null = this.domElement.querySelector("#libraryTabs");
     let html: string = "";
-    //let libraryFlag : boolean=false;
 
     try {
       // *** check if user is in Managers Security Group
@@ -209,14 +208,13 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
       //}
 
       for (let x = 0; x < library.length; x++) {
-        dataFlag = false;
-        
-        this.checkDataAsync(library[x],this.properties.siteName);        
+
+        let libraryFlag = await this.checkDataAsync(library[x],this.properties.siteName);
+        console.log(library[x],libraryFlag);
+
         const dataTarget:string=library[x].toLowerCase();
         
-        console.log("dataFlag="+dataFlag,"library",library[x]);
-
-        if(dataFlag){
+        if(libraryFlag){
           if (this.properties.isPowerUser) {
 
           html += `<button class="btn libraryBtn nav-link text-left mb-1" id="${library[x]}_btn" data-bs-toggle="pill" data-bs-target="#${dataTarget}" type="button" role="tab" aria-controls="${library[x]}" aria-selected="true">
@@ -246,9 +244,10 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
     return;
   }
 
-  private async checkDataAsync(library:string,team:string):Promise<void> {
+  private async checkDataAsync(library:string,team:string):Promise<boolean> {
      
     let dcName : string = "";      
+    let dataFlag : boolean = false;
 
     switch(this.properties.divisionTitle){
       case "Assessments":
@@ -267,22 +266,17 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
         dcName = "hea_dc";
         break;
     }
-  
+
     await this.checkData(dcName,library,team)
       .then((response) => {
-        //console.log("dcName",dcName,"responseValue",response.value.length);
-        console.log("dataFlag="+dataFlag);
-        console.log(library," count:",response.value.length);
-        //count=response.value.length;
+        console.log("Value",response.value.length);
         if(response.value.length>0){
           dataFlag = true; 
-        }else{
-          dataFlag = false;
         }
       });
-      return;
+      return dataFlag;
   }
-
+  
   private async checkData(dcName:string,library:string,team:string):Promise<ISPLists> {
     const requestUrl = `https://${this.properties.tenantURL[2]}/sites/${dcName}/_api/web/lists/GetByTitle('${library}')/items?$filter=TaxCatchAll/Term eq '${team}'&$top=10`;
 
