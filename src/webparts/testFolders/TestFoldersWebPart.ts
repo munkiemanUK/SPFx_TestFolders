@@ -15,13 +15,13 @@ import {
   SPHttpClient,
   SPHttpClientResponse,
 } from "@microsoft/sp-http";
-//import { spfi, SPFx } from "@pnp/sp";
-//import { Web } from "@pnp/sp/webs"; 
+import { spfi, SPFx } from "@pnp/sp";
+import { Web } from "@pnp/sp/webs"; 
 import "@pnp/sp/webs";
 import "@pnp/sp/lists";
 import "@pnp/sp/items";
 import "@pnp/sp/items/get-all";
-//import { LogLevel, PnPLogging } from "@pnp/logging";
+import { LogLevel, PnPLogging } from "@pnp/logging";
 //import * as _ from 'lodash';
 
 require("bootstrap");
@@ -132,13 +132,13 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
           ${[/*<div class="col">${this.properties.siteTitle}</div>*/]}
         </div>
         <div class="row">
-          <div class="col-auto libraryContainer">
+          <div class="col-4 libraryContainer">
             <div class="d-flex mt-1 align-items-start">
               <div class="nav flex-column nav-pills me-3 libraryList" id="libraryTabs" role="tablist" aria-orientation="vertical"></div> 
             </div>
           </div>
 
-          <div class="col-9 tab-content" id="v-pills-tabContent">
+          <div class="col-8 tab-content" id="v-pills-tabContent">
             <div class="tab-pane fade" id="policies" role="tabpanel" aria-labelledby="policies"> 
               <div class="row">
                 <div class="col-auto" id="policiesFolders"></div>
@@ -153,7 +153,7 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
             </div>
             <div class="tab-pane fade" id="guides" role="tabpanel" aria-labelledby="guides">
               <div class="row">
-                <div class="col-auto" id="guidesFolders"></div>
+                <div class="col-6" id="guidesFolders"></div>
                 <div class="col" id="guidesFiles"></div>
               </div>               
             </div>
@@ -209,7 +209,7 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
 
       for (let x = 0; x < library.length; x++) {
 
-        let libraryFlag = await this.checkDataAsync(library[x],this.properties.siteName);
+        let libraryFlag = await this.checkDataAsync(library[x],this.properties.siteName,"");
         console.log(library[x],libraryFlag);
 
         const dataTarget:string=library[x].toLowerCase();
@@ -236,7 +236,7 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
       if(listContainer){listContainer.innerHTML = html;}
 
       // *** get custom tabs from termstore and add library column
-      //await this.renderCustomTabsAsync();
+      await this.renderCustomTabsAsync();
       //await this.setLibraryListeners();
     } catch (err) {
       //await this.addError(this.properties.siteName,"getLibraryTabs",err.message);
@@ -244,7 +244,7 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
     return;
   }
 
-  private async checkDataAsync(library:string,team:string):Promise<boolean> {
+  private async checkDataAsync(library:string,team:string,category:string):Promise<boolean> {
      
     let dcName : string = "";      
     let dataFlag : boolean = false;
@@ -267,7 +267,7 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
         break;
     }
 
-    await this.checkData(dcName,library,team)
+    await this.checkData(dcName,library,team,category)
       .then((response) => {
         console.log("Value",response.value.length);
         if(response.value.length>0){
@@ -277,9 +277,15 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
       return dataFlag;
   }
   
-  private async checkData(dcName:string,library:string,team:string):Promise<ISPLists> {
-    const requestUrl = `https://${this.properties.tenantURL[2]}/sites/${dcName}/_api/web/lists/GetByTitle('${library}')/items?$filter=TaxCatchAll/Term eq '${team}'&$top=10`;
-
+  private async checkData(dcName:string,library:string,team:string,category:string):Promise<ISPLists> {
+    
+    let requestUrl = '';
+    
+    if(category === ''){
+      requestUrl=`https://${this.properties.tenantURL[2]}/sites/${dcName}/_api/web/lists/GetByTitle('${library}')/items?$filter=TaxCatchAll/Term eq '${team}'&$top=10`;
+    }else{
+      requestUrl=`https://${this.properties.tenantURL[2]}/sites/${dcName}/_api/web/lists/GetByTitle('${library}')/items?$filter=TaxCatchAll/Term eq '${category}'&$top=10`;
+    }
     return this.context.spHttpClient.get(requestUrl, SPHttpClient.configurations.v1)
       .then((response : SPHttpClientResponse) => {
         return response.json();
@@ -287,53 +293,182 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
   }
 
 /*
-  private async checkData(library:string,team:string):Promise<boolean> {
-    //this.context.pageContext.web.absoluteUrl +      
+  private async checkData(library:string,team:string,category:string):Promise<boolean> {
     
-    //const divisions : string[] = ["Assessments","Central","Connect","Employability","Health"];
-    //let dataFlag : boolean = false;
+    let dcName : string = "";
+    let dataFlag : boolean = false;
     
-    //for(let x=0;x<divisions.length;x++){
-    //  let division : string = divisions[x];      
-      let dcName : string = "";      
+    switch(this.properties.divisionTitle){
+      case "Assessments":
+        dcName = "asm_dc";
+        break;
+      case "Central":
+        dcName = "cen_dc";
+        break;
+      case "Connect":
+        dcName = "cnn_dc";
+        break;
+      case "Employability":
+        dcName = "emp_dc";
+        break;
+      case "Health":
+        dcName = "hea_dc";
+        break;
+    }
 
-      switch(this.properties.divisionTitle){
+    const requestUrl = `https://${this.properties.tenantURL[2]}/sites/${dcName}/_api/web/lists/GetByTitle('${library}')/items?$filter=TaxCatchAll/Term eq '${team}'&$top=10`;
+
+    this.context.spHttpClient.get(requestUrl, SPHttpClient.configurations.v1)
+      .then((response : SPHttpClientResponse) => {
+        //if(response.ok){
+          response.json().then((responseJSON:any) => {
+            console.log("responseJSON",responseJSON.value.length);
+            dataFlag = true;              
+            //if(responseJSON.value.length>0){
+            //  dataFlag=true; 
+            //}
+          });
+          //}
+      });
+    return dataFlag;   
+  }
+*/
+
+  // **** Function  : _renderCustomTabsAsync
+  // **** Purpose   : set termID based on Divsion
+  // **** Return    :
+  // **** Author    : Jason Clark
+  // **** Date      : Jan 2024
+  private async renderCustomTabsAsync(): Promise<void> {
+    const setID = "be84d0a6-e641-4f6d-830e-11e81f13e2f1";  // Maximus Custom Set Terms
+    //const setID = "04f05939-559c-49ef-b69b-e903f79ee898";  // Munkieman Custom Set Terms
+    let termID: string = "";
+    let label: string = "";
+  
+    console.log("division",this.properties.divisionTitle);
+
+    try {
+      switch (this.properties.divisionTitle) {
         case "Assessments":
-          dcName = "asm_dc";
+          termID = "90a0a9eb-bbcc-4693-9674-e56c4d41375f";  // Maximus Assessment Custom Terms
+          //termID = "37618895-06ce-47c5-ba62-93176ee62020";  // Munkieman Assessment Custom Terms
           break;
         case "Central":
-          dcName = "cen_dc";
+          termID = "471a563b-a4d9-4ce7-a8e6-4124562b3ace";  // Maximus Central Custom Terms
+          //termID = "39713c5b-3b41-4b56-bbec-d42479a9059b";  // Munkieman Central Custom Terms
           break;
         case "Connect":
-          dcName = "cnn_dc";
+          termID = "3532f8fc-4ad2-415c-94ff-c5c7af559996";  // Maximus Connect Custom Terms
           break;
         case "Employability":
-          dcName = "emp_dc";
+          termID = "feb3d3c8-d948-4d3e-b997-a2ea74653b3e";  // Maximus Employability Custom Terms
           break;
         case "Health":
-          dcName = "hea_dc";
+          termID = "c9dfa3b6-c7c6-4e74-a738-0ffe54e1ff5c";  // Maximus Health Custom Terms
           break;
       }
-
-      const requestUrl = `https://${this.properties.tenantURL[2]}/sites/${dcName}/_api/web/lists/GetByTitle('${library}')/items?$filter=TaxCatchAll/Term eq '${team}'&$top=10`;
-      console.log(requestUrl);
-
-      this.context.spHttpClient.get(requestUrl, SPHttpClient.configurations.v1)
-        .then((response : SPHttpClientResponse) => {
-          //if(response.ok){
-            response.json().then((responseJSON:any) => {
-              console.log("responseJSON",responseJSON.value.length);
-              //if(responseJSON.value.length>0){
-              //  dataFlag=true; 
-              //}else{
-              //  dataFlag=false;
-              //}
+  
+      this.getCustomTabs(setID, termID)
+      .then(async (terms) => {
+        for (let x = 0; x < terms.value.length; x++) {
+          label = terms.value[x].labels[0].name;
+          termID = terms.value[x].id;
+  
+          if (label === this.properties.siteName) {
+            await this.getCustomTabs(setID, termID).then(async (response) => {
+              await this._renderCustomTabs(response.value);
+              //await this.setCustomLibraryListeners();
+              await this.setLibraryListeners();
             });
-          //}
+          }
+        }
+      })
+      .catch((err) => {console.log('renderCustomTabs error',err)});
+
+    } catch (err) {
+      //await this.addError(this.properties.siteName,"_renderCustomTabsAsync",err.message);
+    }
+    return;
+  }
+  
+  // **** Function  : getCustomTabs
+  // **** Purpose   : check termstore for the custom library tabs, for a given setID and termID.
+  // **** Return    : response data as JSON from spHttpClient request
+  // **** Author    : Jason Clark
+  // **** Date      : Jan 2024
+  private async getCustomTabs(setID: string, termID: string): Promise<any> {
+    console.log("getCustomTabs",setID,termID);
+    try {
+      const groupID = "4660ef58-779c-4970-bcd7-51773916e8dd";  // Maximus Document Centre Terms
+      // const groupID = "";  // Munkieman Document Centre Terms
+      const url: string = `https://${this.properties.tenantURL[2]}/_api/v2.1/termStore/groups/${groupID}/sets/${setID}/terms/${termID}/children?select=id,labels`;
+      console.log(url);
+
+      return this.context.spHttpClient
+        .get(url, SPHttpClient.configurations.v1)
+        .then((response: SPHttpClientResponse) => {
+          if (response.ok) {
+            return response.json();
+          }
         });
-        
-    //}
-    return true;   
+    } catch (err) {
+      //await this.addError(this.properties.siteName,"getCustomTabs",err.message);
+    }
+  }
+  
+  // **** Function  : _renderCustomTabs
+  // **** Purpose   : write the custom library tabs to the DOM
+  // **** Return    : 
+  // **** Author    : Jason Clark
+  // **** Date      : Jan 2024
+  private async _renderCustomTabs(items: any): Promise<void> {
+    let html: string = "";
+    let labelName: string = "";
+    let labelID: string = "";
+    //const libraryTabs : Element | null = this.domElement.querySelector("#libraryTabs");
+    //const headerBar : Element | null = this.domElement.querySelector("#headerBar");
+
+    try {
+      //if(headerBar){
+        this.domElement.querySelector("#headerBar")!.innerHTML = `<div class="col-3">
+                      <img src="${require("./assets/Robot_Spin.gif")}" height="50" width="50"/>
+                    </div>
+                    <div class="col">
+                      <div class="alert alert-info" role="alert">Checking for custom folders in Custom Library</div>
+                    </div>`;
+      //}
+
+      for (let x = 0; x < items.length; x++) {
+        labelName = items[x].labels[0].name;
+        labelID = labelName.replace(/\s+/g, "");
+  
+        let libraryFlag = await this.checkDataAsync("Custom",this.properties.siteName,labelName);
+        if(libraryFlag){
+          if (this.properties.isPowerUser) {
+            html += `<button class="btn libraryBtn nav-link mb-1" id="customTab" data-bs-toggle="pill" data-bs-target="#custom" type="button" role="tab" aria-controls="${labelID}" aria-selected="true">
+                        <div class="col-1 libraryUploadIcon">
+                        <a href="${this.properties.dcURL}/custom/Forms/AllItems.aspx?userFiltersInViewXml=1&FilterField1=DC%5FCategory&FilterValue1=${labelName}&FilterType1=TaxonomyFieldType&FilterField2=DC%5FTeam&FilterValue2=${this.properties.siteName}&FilterType2=TaxonomyFieldType&viewid=0d16333b%2Dc80f%2D438c%2Da14e%2Dff4bea492de9" target="_blank">
+                        <h3 class="text-white"><i class="bi bi-cloud-arrow-up"></i></h3>
+                          </a>
+                        </div>
+                        <div class="col-10 libraryName"><h6 id="customTabName" class="libraryText">${labelName}</h6></div>
+                      </button>`;
+          } else {
+            html += `<button class="btn libraryBtn nav-link text-left mb-1" id="customTab" data-bs-toggle="pill" data-bs-target="#custom" type="button" role="tab" aria-controls="Custom" aria-selected="true"><h6 id="customTabName" class="libraryText">${labelName}</h6></button>`;
+          }
+        }
+      }  
+      //if(libraryTabs){
+        this.domElement.querySelector("#libraryTabs")!.innerHTML += html;
+      //}
+      setTimeout(() => {
+        //if(headerBar){
+          this.domElement.querySelector("#headerBar")!.innerHTML = "";
+        //}
+      }, 3000);
+    } catch (err) {
+      //await this.addError(this.properties.siteName,"_renderCustomTabs",err.message);
+    }
   }
 
   private async setLibraryListeners(): Promise<void> {
@@ -382,7 +517,7 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
     return;
   }  
 
-  private getData(libraryName:string,tabNum:number,category:string): void {
+  private async getData(libraryName:string,tabNum:number,category:string): Promise<void> {
     alert(libraryName);
     
     const sp = spfi().using(SPFx(this.context)).using(PnPLogging(LogLevel.Warning));  
@@ -430,7 +565,7 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
             console.log(dcTitle+" Results");
             console.log(Results);
             await this.addToResults(Results).then(async ()=>{            
-              await this._renderFolders(tabNum,libraryName).then(async () => {
+              await this._renderFolders(libraryName).then(async () => {
               //    this.setFolderListeners(division,libraryName);
               });
              
@@ -476,7 +611,7 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
   }
 
   
-  private async _renderFolders(tabNum:number,libraryName:string): Promise<void>{
+  private async _renderFolders(libraryName:string): Promise<void>{
 
     console.log("dataResults length ",this.properties.dataResults.length);
     console.log("folder dataResults",this.properties.dataResults);
@@ -584,20 +719,20 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
 
               if(subFolderName1!==""){
                 //folderHTML+=`<button type="button" data-bs-toggle="button" aria-pressed="true" class="accordion-button mb-1 btn btn-primary text-left"><h6>${folderName}</h6></button>`;
-                folderHTML+=`<button class="btn btn-primary mb-1 ${styles.folderBtn}" type="button" data-bs-toggle="button" aria-pressed="true" data-bs-target="#collapseSF1-${x}" aria-expanded="true" aria-controls="collapseSF1-${x}">
+                folderHTML+=`<button class="row btn btn-primary mb-1 ${styles.folderBtn}" type="button" data-bs-toggle="button" aria-pressed="true" data-bs-target="#collapseSF1-${x}" aria-expanded="true" aria-controls="collapseSF1-${x}">
                               <h5 class="accordion-header" id="folder_${folderNameID}">
-                                <i class="bi bi-folder2"></i>
-                                <span class="badge ms-bgColor-themePrimary">${fcount}</span>                    
-                                <a href="#" class="text-white ms-1">${folderName}</a>
+                                <i class="col-1 text-left bi bi-folder2"></i>
+                                <span class="col-2 text-left badge ms-bgColor-themePrimary"><i class="bi bi-file-earmark"></i> ${fcount}</span>                    
+                                <a href="#" class="col text-white ms-1">${folderName}</a>
                               </h5>
                               </button>`;                              
               }else{
                 folderHTML+=`
-                            <button class="btn btn-success mb-1 ${styles.folderBtn}" type="button" data-bs-toggle="button" aria-pressed="true">
+                            <button class="row btn btn-success mb-1 ${styles.folderBtn}" type="button" data-bs-toggle="button" aria-pressed="true">
                             <h5 class="accordion-header" id="folder_${folderNameID}">
-                              <i class="bi bi-folder2"></i>
-                              <span class="badge ms-bgColor-themePrimary">${fcount}</span>                
-                              <a href="#" class="text-white ms-1">${folderName}</a>
+                              <i class="col-1 text-left bi bi-folder2"></i>
+                              <span class="col-2 text-left badge ms-bgColor-themePrimary"><i class="bi bi-file-earmark"></i> ${fcount}</span>                
+                              <a href="#" class="col text-white ms-1">${folderName}</a>
                             </h5> 
                             </button>`;
               }
@@ -771,7 +906,6 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
     }
     return counter;
   } 
-*/
 
   public async onInit(): Promise<void> {
     await super.onInit();

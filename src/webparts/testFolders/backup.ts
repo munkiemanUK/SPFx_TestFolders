@@ -417,5 +417,175 @@
                       </div>
                     </div>
                   </div>    
-*/              
+            
 
+  // **** Function  : makeHTML
+  // **** Purpose   : create and display the HTML string for each folder and subfolder, then display on DOM.
+  // **** Return    :
+  // **** Author    : Jason Clark
+  // **** Date      : Nov 2023
+  private async makeHTML(x:number,folderName:string,subFolderName1:string,subFolderName2:string,subFolderName3:string):Promise<string>{    
+    let fcount:any=0;
+    let sf1count:any=0;
+    let sf2count:any=0;
+    let sf3count:any=0;
+
+    let folderHTML: string = "";
+    let folderHTMLEnd : string = "";
+    
+    // *** folder id's for event listeners on button click
+    let folderNameID : string = ""; 
+    let subFolderName1ID: string = "";
+    let subFolderName2ID: string = "";
+    let subFolderName3ID: string = "";
+
+    try{
+      // *** check if folderName has spaces or special characters and remove them for the ID.
+      if(folderName.replace(/\s+/g, "")!==undefined){
+        folderNameID=folderName.replace(/\s+/g, "")+"_"+x;
+      }else{
+        folderNameID=folderName+"_"+x;
+      }
+      this.properties.folderArray.push(folderName,folderNameID);
+      fcount = await this.fileCount(folderName,"","","");
+
+      if(subFolderName1!==``){       
+        folderHTML+=`<div class="accordion" id="accordionPF-${x}">
+                      <div class="accordion-item">
+                        <h2 class="accordion-header" id="folder_${folderNameID}">
+                          <button class="btn btn-primary ms-1 accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSF1-${x}" aria-expanded="true" aria-controls="collapseSF1-${x}">
+                            <i class="bi bi-folder2"></i>
+                            <a href="#" class="text-white ms-2" id="${folderNameID}">${folderName}</a>
+                            <span class="badge ms-bgColor-themePrimary">${fcount}</span>                    
+                          </button>
+                        </h2>`;
+      }else{
+        folderHTML+=`<div class="accordion" id="accordionPF-${x}">
+                      <div class="accordion-item">
+                        <h2 class="accordion-header" id="folder_${folderNameID}">
+                          <button class="btn btn-primary ms-1" type="button" data-bs-toggle="collapse" aria-expanded="true" aria-controls="collapseSF1-${x}">
+                            <i class="bi bi-folder2"></i>
+                            <a href="#" class="text-white ms-1" id="${folderNameID}">${folderName}</a>
+                            <span class="badge ms-bgColor-themePrimary">${fcount}</span>                    
+                          </button>
+                        </h2>`;
+      }
+      
+      if(subFolderName1 !== ''){
+        //console.log("CHK subfolder1 ",subFolderName1);
+
+        // *** check if subfolderName has spaces or special characters and remove them for the ID.
+        if(subFolderName1.replace(/\s+/g, "")!==undefined){
+          subFolderName1ID=subFolderName1.replace(/\s+/g, "")+"_"+x;
+        }else{
+          subFolderName1ID=subFolderName1+"_"+x;
+        }
+        this.properties.subFolder1Array.push(subFolderName1,subFolderName1ID);
+        sf1count = await this.fileCount(folderName,subFolderName1,"","");
+
+        if(subFolderName2 !== ``){
+          folderHTML+=`<div id="collapseSF1-${x}" class="accordion-collapse collapse" aria-labelledby="headingSF1-${x}" data-bs-parent="#accordionPF-${x}">
+                        <div class="accordion-body"> 
+                          <div class="accordion" id="accordionSF1-${x}">                              
+                            <div class="accordion-item">
+                              <h2 class="accordion-header" id="SF1_${subFolderName1ID}">
+                                <button class="btn btn-primary accordion-button ms-1" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSF2-${x}" aria-expanded="false" aria-controls="collapseSF2-${x}">
+                                  <i class="bi bi-folder2"></i>
+                                  <a href="#" class="text-white ms-2">${subFolderName1}</a>
+                                  <span class="badge ms-bgColor-themePrimary">${sf1count}</span>                                        
+                                </button>
+                              </h2>`;
+          folderHTMLEnd+=`</div></div></div></div>`;
+
+        }else{
+          folderHTML+=`<div id="collapseSF1-${x}" class="ms-1 accordion-collapse collapse" aria-labelledby="headingSF1" data-bs-parent="#accordionPF-${x}">
+                        <div class="accordion-body">
+                          <div class="accordion-item">
+                            <h2 class="accordion-header" id="SF1_${subFolderName1ID}">
+                              <button class="btn btn-primary" type="button" data-bs-toggle="collapse" aria-expanded="true" aria-controls="collapseSF1">
+                                <i class="bi bi-folder2"></i>
+                                <a href="#" class="text-white ms-1">${subFolderName1}</a>
+                                <span class="badge ms-bgColor-themePrimary">${sf1count}</span>                    
+                              </button>
+                            </h2>
+                          </div>
+                        </div>
+                      </div>`;
+        }               
+      }
+
+      if(subFolderName2 !== ''){
+        //console.log("CHK subfolder2 ",subFolderName2);  
+
+        // *** check if subfolderName has spaces or special characters and remove them for the ID.
+        if(subFolderName2.replace(/\s+/g, "")!==undefined){
+          subFolderName2ID=subFolderName2.replace(/\s+/g, "")+"_"+x;
+        }else{
+          subFolderName2ID=subFolderName2+"_"+x;
+        }
+        this.properties.subFolder2Array.push(subFolderName2,subFolderName2ID);
+        sf2count = await this.fileCount(folderName,subFolderName1,subFolderName2,"");
+
+        if(subFolderName3 !==``){
+          folderHTML+=`<div id="collapseSF2-${x}" class="accordion-collapse collapse" aria-labelledby="headingSF2" data-bs-parent="accordionSF1-${x}">
+                        <div class="accordion-body">
+                          <div class="accordion" id="accordionSF2-${x}">
+                            <div class="accordion-item">
+                              <h2 class="accordion-header" id="SF2_${subFolderName2ID}">
+                                <button class="btn btn-primary accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSF3-${x}" aria-expanded="false" aria-controls="collapseSF2-${x}">
+                                  <i class="bi bi-folder2"></i>
+                                  <a href="#" class="text-white ms-2">${subFolderName2}</a>
+                                  <span class="badge ms-bgColor-themePrimary">${sf2count}</span>                    
+                                </button>
+                              </h2>`;
+          folderHTMLEnd+=`</div></div></div></div>`;
+
+        }else{
+          folderHTML+=`<div id="collapseSF2-${x}" class="accordion-collapse collapse" aria-labelledby="headingSF2" data-bs-parent="accordionSF1-${x}">
+                        <div class="accordion-body">
+                          <div class="accordion-item">
+                            <h2 class="accordion-header" id="SF2_${subFolderName2ID}">
+                              <button class="btn btn-primary" type="button" data-bs-toggle="collapse" aria-expanded="false" aria-controls="collapseSF2-${x}">
+                                <i class="bi bi-folder2"></i>
+                                <a href="#" class="text-white ms-1">${subFolderName2}</a>
+                                <span class="badge ms-bgColor-themePrimary">${sf2count}</span>                    
+                              </button>
+                            </h2>
+                          </div>
+                        </div>
+                      </div>`;
+        }               
+      }   
+
+      if(subFolderName3 !== ''){
+
+        // *** check if subfolderName has spaces or special characters and remove them for the ID.
+        if(subFolderName3.replace(/\s+/g, "")!==undefined){
+          subFolderName3ID=subFolderName3.replace(/\s+/g, "")+"_"+x;
+        }else{
+          subFolderName3ID=subFolderName3+"_"+x;
+        }
+        this.properties.subFolder3Array.push(subFolderName3,subFolderName3ID);
+        sf3count = await this.fileCount(folderName,subFolderName1,subFolderName2,subFolderName3);
+
+        folderHTML+=`<div id="collapseSF3-${x}" class="accordion-collapse collapse" aria-labelledby="headingSF3" data-bs-parent="accordionSF2-${x}">
+                      <div class="accordion-body">
+                        <div class="accordion-item">
+                          <h2 class="accordion-header" id="SF3_${subFolderName3ID}">
+                            <button class="btn btn-primary ms-1" type="button" data-bs-toggle="collapse" aria-expanded="false" aria-controls="collapseSF3-${x}">
+                              <i class="bi bi-folder2"></i>
+                              <a href="#" class="text-white ms-1" id="sf3ID">${subFolderName3}</a>
+                              <span class="badge ms-bgColor-themePrimary">${sf3count}</span>                    
+                            </button>
+                          </h2>
+                        </div>
+                      </div>
+                    </div>`;
+      }
+      folderHTML+=folderHTMLEnd;
+    } catch (err) {
+      //await this.addError(this.properties.siteName, "makeHTML", err.message);
+    }
+    return folderHTML;
+  }
+*/
