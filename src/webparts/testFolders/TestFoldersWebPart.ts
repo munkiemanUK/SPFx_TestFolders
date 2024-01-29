@@ -126,11 +126,7 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
       </div>
       
       <div class="container v-scrollbar">
-        <div class="row" style="height:fit-content">
-          <div class="col-3"><img src="${require("./assets/Robot_Spin.gif")}" height="50" width="50"/></div>
-          <div class="col" id="headerBar"></div>
-          ${[/*<div class="col">${this.properties.siteTitle}</div>*/]}
-        </div>
+        <div class="row" style="height:50px" id="headerBar"></div>
         <div class="row">
           <div class="col-4 libraryContainer">
             <div class="d-flex mt-1 align-items-start">
@@ -377,7 +373,7 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
           if (label === this.properties.siteName) {
             await this.getCustomTabs(setID, termID).then(async (response) => {
               await this._renderCustomTabs(response.value);
-              //await this.setCustomLibraryListeners();
+              await this.setCustomLibraryListeners();
               await this.setLibraryListeners();
             });
           }
@@ -448,8 +444,8 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
             html += `<button class="btn libraryBtn nav-link mb-1" id="customTab" data-bs-toggle="pill" data-bs-target="#custom" type="button" role="tab" aria-controls="${labelID}" aria-selected="true">
                         <div class="col-1 libraryUploadIcon">
                         <a href="${this.properties.dcURL}/custom/Forms/AllItems.aspx?userFiltersInViewXml=1&FilterField1=DC%5FCategory&FilterValue1=${labelName}&FilterType1=TaxonomyFieldType&FilterField2=DC%5FTeam&FilterValue2=${this.properties.siteName}&FilterType2=TaxonomyFieldType&viewid=0d16333b%2Dc80f%2D438c%2Da14e%2Dff4bea492de9" target="_blank">
-                        <h3 class="text-white"><i class="bi bi-cloud-arrow-up"></i></h3>
-                          </a>
+                          <h3 class="text-white"><i class="bi bi-cloud-arrow-up"></i></h3>
+                        </a>
                         </div>
                         <div class="col-10 libraryName"><h6 id="customTabName" class="libraryText">${labelName}</h6></div>
                       </button>`;
@@ -469,10 +465,44 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
     } catch (err) {
       //await this.addError(this.properties.siteName,"_renderCustomTabs",err.message);
     }
+    return;
   }
+
+  private async setCustomLibraryListeners(): Promise<void> {
+    // *** event listeners for custom library category tabs
+    try {
+      const tabBtns = this.domElement.querySelectorAll("#customTabName");
+      let timer:any;
+      console.log("tabBtns",tabBtns);
+      for (let x = 0; x < tabBtns.length; x++) {
+        const customTabName = tabBtns[x].innerHTML;
+
+        tabBtns[x]?.addEventListener("click", event => { 
+          //if(event.detail===1){
+            timer=setTimeout(async () => {
+              await this.getData("Custom",7,customTabName);
+            },400);
+          //}
+        });
+  
+        tabBtns[x]?.addEventListener("dblclick",event => {
+          clearTimeout(timer);
+        });        
+        
+        //tabBtns[x].addEventListener("click", async event => {
+        //  await this.getData("Custom",7,customTabName);
+        //});
+      }      
+    } catch (err) {
+      //await this.addError(this.properties.siteName,"setCustomLibraryListeners",err.message);
+    }     
+    return;
+  } 
 
   private async setLibraryListeners(): Promise<void> {
     try {
+      let timer:any;
+
       // *** event listeners for main document libraries
       document
         .getElementById("Policies_btn")
@@ -484,11 +514,20 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
         ?.addEventListener("click", async (_e: Event) => {
           await this.getData("Procedures",2,"");
       });
-      document
-        .getElementById("Guides_btn")
-        ?.addEventListener("click", async (_e: Event) => {
-          await this.getData("Guides",3,"");
-        });
+
+      let guideElem=document.getElementById("Guides_btn");
+
+      guideElem?.addEventListener("click", async event => {
+        if(event.detail===1){
+          timer=setTimeout(() => {
+            this.getData("Guides",3,"");
+          },400);
+        }
+      });
+      guideElem?.addEventListener("dblclick",event => {
+        clearTimeout(timer);
+      });
+
       document
         .getElementById("Forms_btn")
         ?.addEventListener("click", async (_e: Event) => {
@@ -518,7 +557,7 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
   }  
 
   private async getData(libraryName:string,tabNum:number,category:string): Promise<void> {
-    alert(libraryName);
+    //alert(libraryName);
     
     const sp = spfi().using(SPFx(this.context)).using(PnPLogging(LogLevel.Warning));  
     this.properties.dataResults=[];
@@ -566,7 +605,7 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
             console.log(Results);
             await this.addToResults(Results).then(async ()=>{            
               await this._renderFolders(libraryName).then(async () => {
-              //    this.setFolderListeners(division,libraryName);
+                await this.setFolderListeners(libraryName);
               });
              
               // const folderSet = new Set(Results.DC_Folder); 
@@ -587,7 +626,7 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
 
             });        
           }else{
-            alert("No Data found for this Team in "+dcTitle);
+            //alert("No Data found for this Team in "+dcTitle);
           }    
         });
         //.catch(() => {console.log("error")});
@@ -621,7 +660,6 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
     const guidesContainer : Element | null = this.domElement.querySelector("#guidesFolders");
     const formsContainer : Element | null = this.domElement.querySelector("#formsFolders");
 
-    let htmlString : string = "";
     let folderHTML: string = "";
     //let subfolder1HTML : string = "";
     //let subfolder2HTML : string = "";
@@ -653,6 +691,10 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
     let subFolderName1ID: string = "";
     let subFolderName2ID: string = "";
     let subFolderName3ID: string = "";
+
+    //let folderID : string = ""; // accordion id's for folders
+    //let subFolder01ID : string = "";
+    //let subFolder02ID : string = "";
 
     let fcount:any=0;
     let sf1count:any=0;
@@ -700,40 +742,52 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
 
         if (fileStatus === "Approved" || (fileStatus === "Draft" && this.properties.isPowerUser)) {
 
-          folderName = this.properties.dataResults[x].DC_Folder.Label;            
+          folderName = this.properties.dataResults[x].FieldValuesAsText.DC_x005f_Folder;            
           subFolderName1 = this.properties.dataResults[x].FieldValuesAsText.DC_x005f_SubFolder01;
           subFolderName2 = this.properties.dataResults[x].FieldValuesAsText.DC_x005f_SubFolder02;
           subFolderName3 = this.properties.dataResults[x].FieldValuesAsText.DC_x005f_SubFolder03;
-          
+
+          if(folderName.replace(/\s+/g, "")!==undefined){
+            folderNameID=folderName.replace(/\s+/g, "")+"_"+x;
+          }else{
+            folderNameID=folderName+"_"+x;
+          }
+
+          if(subFolderName1.replace(/\s+/g, "")!==undefined){
+            subFolderName1ID=subFolderName1.replace(/\s+/g, "")+"_"+x;
+          }else{
+            subFolderName1ID=subFolderName1+"_"+x;
+          }
+
           if(folderName !== null){
 
             if(folderName !== folderPrev){
 
-              if(folderName.replace(/\s+/g, "")!==undefined){
-                folderNameID=folderName.replace(/\s+/g, "")+"_"+x;
-              }else{
-                folderNameID=folderName+"_"+x;
-              }
               this.properties.folderArray.push(folderName,folderNameID);
               fcount = await this.fileCount(folderName,"","","");
+              // *** Parent Folder ID
+              //folderID = `accordion-Folder`;
 
               if(subFolderName1!==""){
                 //folderHTML+=`<button type="button" data-bs-toggle="button" aria-pressed="true" class="accordion-button mb-1 btn btn-primary text-left"><h6>${folderName}</h6></button>`;
-                folderHTML+=`<button class="row btn btn-primary mb-1 ${styles.folderBtn}" type="button" data-bs-toggle="button" aria-pressed="true" data-bs-target="#collapseSF1-${x}" aria-expanded="true" aria-controls="collapseSF1-${x}">
+                folderHTML+=`<button class="row btn btn-primary mb-1 ${styles.folderBtn}" type="button" data-bs-toggle="collapse" aria-pressed="true" data-bs-target="#accordion_${folderNameID}" aria-expanded="true">
                               <h5 class="accordion-header" id="folder_${folderNameID}">
                                 <i class="col-1 text-left bi bi-folder2"></i>
                                 <span class="col-2 text-left badge ms-bgColor-themePrimary"><i class="bi bi-file-earmark"></i> ${fcount}</span>                    
-                                <a href="#" class="col text-white ms-1">${folderName}</a>
+                                <a href="#" class="col text-white ms-2">${folderName}</a>
                               </h5>
-                              </button>`;                              
+                            </button>
+                            <div class="collapse" id="accordion_${folderNameID}">
+                                <div class="card card-body">
+                                </div>
+                            </div>`;                              
               }else{
-                folderHTML+=`
-                            <button class="row btn btn-success mb-1 ${styles.folderBtn}" type="button" data-bs-toggle="button" aria-pressed="true">
-                            <h5 class="accordion-header" id="folder_${folderNameID}">
-                              <i class="col-1 text-left bi bi-folder2"></i>
-                              <span class="col-2 text-left badge ms-bgColor-themePrimary"><i class="bi bi-file-earmark"></i> ${fcount}</span>                
-                              <a href="#" class="col text-white ms-1">${folderName}</a>
-                            </h5> 
+                folderHTML+=`<button class="row btn btn-success mb-1 ${styles.folderBtn}" type="button" data-bs-toggle="button" aria-pressed="true">
+                              <h5 class="accordion-header" id="folder_${folderNameID}">
+                                <i class="col-1 text-left bi bi-folder2"></i>
+                                <span class="col-2 text-left badge ms-bgColor-themePrimary"><i class="bi bi-file-earmark"></i> ${fcount}</span>                
+                                <a href="#" class="col text-white ms-2">${folderName}</a>
+                              </h5> 
                             </button>`;
               }
              
@@ -744,32 +798,31 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
 
             if(subFolderName1 !== ""){
 
-              if(subFolderName1.replace(/\s+/g, "")!==undefined){
-                subFolderName1ID=subFolderName1.replace(/\s+/g, "")+"_"+x;
-              }else{
-                subFolderName1ID=subFolderName1+"_"+x;
-              }
               this.properties.subFolder1Array.push(subFolderName1,subFolderName1ID);
               sf1count = await this.fileCount(folderName,subFolderName1,"","");
 
               if(subFolderName1 !== subFolderPrev1){
                 
                 if(subFolderName2 !== ""){
-                  folderHTML+=`<button type="button" data-bs-toggle="button" aria-pressed="true" class="ms-2 btn btn-secondary ${styles.folderBtn}">
+                  folderHTML+=`<button class="btn btn-secondary ms-2 ${styles.folderBtn}" type="button" data-bs-toggle="collapse" aria-pressed="true" data-bs-target="#accordion_${subFolderName1ID}" aria-expanded="true">
                                 <h5 class="accordion-header" id="SF1_${subFolderName1ID}">
                                 <i class="bi bi-folder2"></i>
                                 <span class="badge ms-bgColor-themePrimary">${sf1count}</span>                    
                                 <a href="#" class="text-white ms-1">${subFolderName1}</a>
                                 </h5>
-                                </button>`;        
+                                </button>
+                                <div class="collapse" id="accordion_${subFolderName1ID}">
+                                  <div class="card card-body">
+                                  </div>
+                                </div>`;         
                 }else{
-                  folderHTML+=`<button type="button" data-bs-toggle="button" aria-pressed="true" class="ms-2 btn btn-dark ${styles.folderBtn}">
+                  folderHTML+=`<button class="btn btn-dark ms-2 ${styles.folderBtn}" type="button" data-bs-toggle="button" aria-pressed="true">
                                 <h5 class="accordion-header" id="SF1_${subFolderName1ID}">
                                 <i class="bi bi-folder2"></i>
                                 <span class="badge ms-bgColor-themePrimary">${sf1count}</span>                    
                                 <a href="#" class="text-white ms-1">${subFolderName1}</a>
                                 </h5>
-                                </button>`;
+                              </button>`;
                               
                 }  
 
@@ -850,16 +903,16 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
 
       switch (libraryName) {
         case "Policies":
-          if(policyContainer){policyContainer.innerHTML=htmlString;}
+          if(policyContainer){policyContainer.innerHTML=folderHTML;}
           break;
         case "Procedures":
-          if(procedureContainer){procedureContainer.innerHTML=htmlString;}
+          if(procedureContainer){procedureContainer.innerHTML=folderHTML;}
           break;
         case "Guides":
           if(guidesContainer){guidesContainer.innerHTML=folderHTML;}
           break;
         case "Forms":
-          if(formsContainer){formsContainer.innerHTML=htmlString;}
+          if(formsContainer){formsContainer.innerHTML=folderHTML;}
           //this.domElement.querySelector("#formsFolders")!.innerHTML=folderHTML;
           break;
         case "General":
@@ -906,6 +959,113 @@ export default class TestFoldersWebPart extends BaseClientSideWebPart<ITestFolde
     }
     return counter;
   } 
+
+  private async setFolderListeners(libraryName:string): Promise<void> {
+
+    try {
+      // *** event listeners for parent folders      
+      if (this.properties.folderArray.length > 0) {
+
+        const folderNameID = this.properties.folderArray.filter((value, index) => index % 2 > 0);
+        //const folderName = this.properties.folderArray.filter((value, index) => index % 2 === 0);
+        //const division = this.properties.folderArray.filter((value, index) => index % 3 === 3 - 3);
+
+        //console.log("folderNameID ",folderNameID);
+        //console.log("folderName ",folderName);
+        //console.log("division ",division);
+
+        for (let x = 0; x < folderNameID.length; x++) {
+
+          document.getElementById("folder_" + folderNameID[x])
+            ?.addEventListener("click", async (_e: Event) => {
+              //await this.getFiles(libraryName,folderName[x]);
+
+              if (document.querySelector("#" + libraryName + "Folders button.active") !== null) {
+                document
+                  .querySelector("#" + libraryName + "Folders button.active")
+                  ?.classList.remove("active");
+              }
+        
+              const elem = document.querySelector("#folder_" + folderNameID[x]);
+              elem?.classList.add('active');
+            });
+        }
+      }
+
+      // *** event listeners for subfolders level 1      
+      if (this.properties.subFolder1Array.length > 0) {
+
+        const subFolder1NameID = this.properties.subFolder1Array.filter((value, index) => index % 2 > 0);
+        //const subFolder1Name = this.properties.subFolder1Array.filter((value, index) => index % 2 === 0);
+
+        for (let x = 0; x < subFolder1NameID.length; x++) {
+          document.getElementById("SF1_" + subFolder1NameID[x])
+            ?.addEventListener("click", async (_e: Event) => {
+              //console.log("subfolder1name ",subFolder1Name[x]);
+              //await this.getFiles(libraryName,subFolder1Name[x]);
+
+              if (document.querySelector("#" + libraryName + "Folders button.active") !== null) {
+                document
+                  .querySelector("#" + libraryName + "Folders button.active")
+                  ?.classList.remove("active");
+              }
+        
+              const elem = document.querySelector("#SF1_" + subFolder1NameID[x]);
+              elem?.classList.add('active');
+            });
+        }
+      }
+
+      // *** event listeners for subfolders level 2      
+      if (this.properties.subFolder2Array.length > 0) {
+
+        const subFolder2NameID = this.properties.subFolder2Array.filter((value, index) => index % 2 > 0);
+        //const subFolder2Name = this.properties.subFolder2Array.filter((value, index) => index % 2 === 0);
+
+        for (let x = 0; x < subFolder2NameID.length; x++) {          
+          document.getElementById("SF2_" + subFolder2NameID[x])
+            ?.addEventListener("click", async (_e: Event) => {
+              //await this.getFiles(libraryName,subFolder2Name[x]);
+
+              if (document.querySelector("#" + libraryName + "Folders button.active") !== null) {
+                document
+                  .querySelector("#" + libraryName + "Folders button.active")
+                  ?.classList.remove("active");
+              }
+        
+              const elem = document.querySelector("#SF2_" + subFolder2NameID[x]);
+              elem?.classList.add('active');
+            });
+        }
+      }      
+
+      // *** event listeners for subfolders level 3      
+      if (this.properties.subFolder3Array.length > 0) {
+
+        const subFolder3NameID = this.properties.subFolder3Array.filter((value, index) => index % 2 > 0);
+        //const subFolder3Name = this.properties.subFolder3Array.filter((value, index) => index % 2 === 0);
+
+        for (let x = 0; x < subFolder3NameID.length; x++) {          
+          document.getElementById("SF3_" + subFolder3NameID[x])
+            ?.addEventListener("click", async (_e: Event) => {
+              //await this.getFiles(libraryName,subFolder3Name[x]);
+
+              if (document.querySelector("#" + libraryName + "Folders button.active") !== null) {
+                document
+                  .querySelector("#" + libraryName + "Folders button.active")
+                  ?.classList.remove("active");
+              }
+        
+              const elem = document.querySelector("#SF3_" + subFolder3NameID[x]);
+              elem?.classList.add('active');
+            });
+        }
+      } 
+
+    } catch (err) {
+      //await this.addError(this.properties.siteName, "setFolderListeners", err.message);
+    }    
+  }   
 
   public async onInit(): Promise<void> {
     await super.onInit();
